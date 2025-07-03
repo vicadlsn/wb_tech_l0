@@ -6,7 +6,7 @@ services:
             POSTGRES_PASSWORD: postgres
             POSTGRES_DB: orders
         ports:
-            - "5432:5432"
+            - "5433:5432"
         volumes:
             - pgdata:/var/lib/postgresql/data
 
@@ -17,6 +17,7 @@ services:
             DATABASE_URL: "user=postgres password=postgres dbname=orders sslmode=disable"
         depends_on:
             - postgres
+        restart: on-failure
         entrypoint:
             [
                 "goose",
@@ -44,5 +45,16 @@ services:
         depends_on:
             - zookeeper
 
+    kafka-init:
+        image: confluentinc/cp-kafka:7.5.0
+        depends_on:
+            - kafka
+        entrypoint:
+            [
+                "sh",
+                "-c",
+                "kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic orders --replication-factor 1 --partitions 1",
+            ]
+        restart: no
 volumes:
     pgdata:
