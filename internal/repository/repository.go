@@ -96,28 +96,59 @@ func (r *OrderRepository) GetOrder(ctx context.Context, orderUID string) (*model
 		return nil, fmt.Errorf("failed to select order by order_uid: %w", err)
 	}
 
-	query = `SELECT name, phone, zip, city, address, region, email FROM delivery WHERE order_uid = $1`
-	err = r.db.QueryRow(ctx, query, orderUID).Scan(&order.Delivery.Name, &order.Delivery.Phone, &order.Delivery.Zip, &order.Delivery.City,
-		&order.Delivery.Address, &order.Delivery.Region, &order.Delivery.Email)
+	delivery, err := r.getDelivery(ctx, orderUID)
+	if err != nil {
+		return nil, err
+	}
+	order.Delivery = *delivery
+
+	payment, err := r.getPayment(ctx, orderUID)
+	if err != nil {
+		return nil, err
+	}
+	order.Payment = *payment
+
+	items, err := r.getItems(ctx, orderUID)
+	if err != nil {
+		return nil, err
+	}
+	order.Items = items
+
+	return &order, nil
+}
+
+func (r *OrderRepository) getDelivery(ctx context.Context, orderUID string) (*models.Delivery, error) {
+	var delivery models.Delivery
+	query := `SELECT name, phone, zip, city, address, region, email FROM delivery WHERE order_uid = $1`
+	err := r.db.QueryRow(ctx, query, orderUID).Scan(&delivery.Name, &delivery.Phone, &delivery.Zip, &delivery.City,
+		&delivery.Address, &delivery.Region, &delivery.Email)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select delivery by order_uid: %w", err)
 	}
+	return &delivery, nil
+}
 
-	query = `SELECT transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee 
-             FROM payment WHERE order_uid = $1`
-	err = r.db.QueryRow(ctx, query, orderUID).Scan(&order.Payment.Transaction, &order.Payment.RequestID, &order.Payment.Currency, &order.Payment.Provider,
-		&order.Payment.Amount, &order.Payment.PaymentDt, &order.Payment.Bank, &order.Payment.DeliveryCost, &order.Payment.GoodsTotal, &order.Payment.CustomFee)
+func (r *OrderRepository) getPayment(ctx context.Context, orderUID string) (*models.Payment, error) {
+	var p models.Payment
+	query := `SELECT transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee 
+              FROM payment WHERE order_uid = $1`
+	err := r.db.QueryRow(ctx, query, orderUID).Scan(&p.Transaction, &p.RequestID, &p.Currency, &p.Provider,
+		&p.Amount, &p.PaymentDt, &p.Bank, &p.DeliveryCost, &p.GoodsTotal, &p.CustomFee)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select payment by order_uid: %w", err)
 	}
+	return &p, nil
+}
 
-	query = `SELECT chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status FROM item WHERE order_uid = $1`
+func (r *OrderRepository) getItems(ctx context.Context, orderUID string) ([]models.Item, error) {
+	query := `SELECT chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status FROM item WHERE order_uid = $1`
 	rows, err := r.db.Query(ctx, query, orderUID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to select item by order_uid: %w", err)
+		return nil, fmt.Errorf("failed to select items by order_uid: %w", err)
 	}
 	defer rows.Close()
 
+	var items []models.Item
 	for rows.Next() {
 		var item models.Item
 		err := rows.Scan(&item.ChrtID, &item.TrackNumber, &item.Price, &item.Rid, &item.Name, &item.Sale,
@@ -125,12 +156,60 @@ func (r *OrderRepository) GetOrder(ctx context.Context, orderUID string) (*model
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
-		order.Items = append(order.Items, item)
+		items = append(items, item)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
-	return &order, nil
+	return items, nil
+}
+
+func (r *OrderRepository) GetOrders(ctx context.Context) ([]*models.Order, error) {
+	query := `SELECT order_uid, track_number, entry, locale, internal_signature,customer_id, delivery_service, shardkey, sm_id, date_created, oof_shard FROM orders`
+
+	rows, err := r.db.Query(ctx, query)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to select orders: %w", err)
+	}
+
+	defer rows.Close()
+
+	var orders []*models.Order
+	for rows.Next() {
+		var order models.Order
+		err := rows.Scan(&order.OrderUID, &order.TrackNumber, &order.Entry, &order.Locale, &order.InternalSignature, &order.CustomerID, &order.DeliveryService, &order.ShardKey, &order.SmID, &order.DateCreated, &order.OofShard)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan order: %w", err)
+		}
+
+		delivery, err := r.getDelivery(ctx, order.OrderUID)
+		if err != nil {
+			return nil, err
+		}
+		order.Delivery = *delivery
+
+		payment, err := r.getPayment(ctx, order.OrderUID)
+		if err != nil {
+			return nil, err
+		}
+		order.Payment = *payment
+
+		items, err := r.getItems(ctx, order.OrderUID)
+		if err != nil {
+			return nil, err
+		}
+		order.Items = items
+
+		orders = append(orders, &order)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return orders, nil
 }

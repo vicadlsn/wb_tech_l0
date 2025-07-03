@@ -20,8 +20,6 @@ const (
 )
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
-
 	log := slog.New(
 		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 	)
@@ -63,6 +61,25 @@ func main() {
 }
 
 func createOrderMap(orderUID string) map[string]any {
+	itemsCount := rand.Intn(10) + 1
+	items := make([]map[string]any, 0, itemsCount)
+	item := map[string]any{
+		"chrt_id":      9934930,
+		"track_number": "WBILMTESTTRACK",
+		"price":        453,
+		"rid":          "ab4219087a764ae0btest",
+		"name":         "Mascaras",
+		"sale":         30,
+		"size":         "0",
+		"total_price":  317,
+		"nm_id":        2389212,
+		"brand":        "Vivienne Sabo",
+		"status":       202,
+	}
+	for range itemsCount {
+		items = append(items, item)
+	}
+
 	return map[string]any{
 		"order_uid":    orderUID,
 		"track_number": "WBILMTESTTRACK",
@@ -88,21 +105,7 @@ func createOrderMap(orderUID string) map[string]any {
 			"goods_total":   317,
 			"custom_fee":    0,
 		},
-		"items": []map[string]any{
-			{
-				"chrt_id":      9934930,
-				"track_number": "WBILMTESTTRACK",
-				"price":        453,
-				"rid":          "ab4219087a764ae0btest",
-				"name":         "Mascaras",
-				"sale":         30,
-				"size":         "0",
-				"total_price":  317,
-				"nm_id":        2389212,
-				"brand":        "Vivienne Sabo",
-				"status":       202,
-			},
-		},
+		"items":              items,
 		"locale":             "en",
 		"internal_signature": "",
 		"customer_id":        "test",

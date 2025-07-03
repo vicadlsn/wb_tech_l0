@@ -9,9 +9,11 @@ import (
 	"syscall"
 	"time"
 
+	"webtechl0/internal/cache"
 	"webtechl0/internal/config"
 	"webtechl0/internal/handler"
 	"webtechl0/internal/kafka"
+	"webtechl0/internal/models"
 	"webtechl0/internal/postgres"
 	"webtechl0/internal/repository"
 	"webtechl0/internal/service"
@@ -41,10 +43,14 @@ func main() {
 	defer pool.Close()
 
 	orderRepository := repository.NewOrderRepository(pool)
-	orderService := service.NewOrderService(orderRepository)
+	orderCache := cache.NewLRUCache[string, *models.Order](10)
+	orderService := service.NewOrderService(orderRepository, orderCache)
+
+	orderService.FillCache(ctx)
+
 	orderHandler := handler.NewOrderHandler(orderService, log)
 
-	router := handler.NewRouter(orderHandler)
+	router := handler.NewRouter(orderHandler, log)
 	addr := cfg.HTTP.Host + ":" + cfg.HTTP.Port
 	server := http.Server{
 		Addr:    addr,
