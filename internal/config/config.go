@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -12,6 +10,8 @@ type Config struct {
 	HTTP     HTTP     `yaml:"server"`
 	Database Database `yaml:"database"`
 	Kafka    Kafka    `yaml:"kafka"`
+
+	CacheCapacity int `yaml:"cache_capacity" env:"CACHE_CAPACITY" env-default:"100"`
 }
 
 type HTTP struct {
@@ -27,24 +27,27 @@ type Database struct {
 	Name     string `yaml:"name" env:"DB_NAME"`
 	Scheme   string `yaml:"scheme" env:"DB_SCHEME" env-default:"public"`
 
-	MaxConnectionAttempts int           `yaml:"maxConnectionAttempts"  env:"DB_MAX_ATTEMPTS" env-default:"10"`
+	MaxConnectionAttempts int           `yaml:"maxConnectionAttempts"  env:"DB_MAX_ATTEMPTS" env-default:"5"`
 	RetryDelay            time.Duration `yaml:"retryDelay" env:"DB_RETRY_DELAY" env-default:"2s"`
 	ConnectionTimeout     time.Duration `yaml:"connectionTimeout" env:"DB_CONNECTION_TIMEOUT" env-default:"30s"`
 }
 
 type Kafka struct {
-	Brokers []string `yaml:"brokers"`
-	Topic   string   `yaml:"topic"`
-	GroupID string   `yaml:"group_id"`
+	Brokers []string `yaml:"brokers" env:"KAFKA_BROKERS"`
+	Topic   string   `yaml:"topic" env:"KAFKA_TOPIC"`
+	GroupID string   `yaml:"group_id" env:"KAFKA_GROUP_ID"`
 }
 
 func New(path string) (*Config, error) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, fmt.Errorf("config file %s does not exist", path)
+	var cfg Config
+
+	if path != "" {
+		if err := cleanenv.ReadConfig(path, &cfg); err != nil {
+			return nil, err
+		}
 	}
 
-	var cfg Config
-	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
+	if err := cleanenv.ReadEnv(&cfg); err != nil {
 		return nil, err
 	}
 

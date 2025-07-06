@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"webtechl0/internal/models"
 )
 
@@ -20,14 +21,16 @@ type OrderCache interface {
 type OrderService struct {
 	repo  OrderRepository
 	cache OrderCache
+	lg    *slog.Logger
 }
 
-func NewOrderService(repo OrderRepository, cache OrderCache) *OrderService {
-	return &OrderService{repo: repo, cache: cache}
+func NewOrderService(repo OrderRepository, cache OrderCache, lg *slog.Logger) *OrderService {
+	return &OrderService{repo: repo, cache: cache, lg: lg}
 }
 
 func (s *OrderService) GetOrder(ctx context.Context, orderUID string) (*models.Order, error) {
 	if order, ok := s.cache.Get(orderUID); ok {
+		s.lg.Debug("Got order from cache", slog.Any("order_uid", orderUID))
 		return order, nil
 	}
 
@@ -35,6 +38,9 @@ func (s *OrderService) GetOrder(ctx context.Context, orderUID string) (*models.O
 	if err != nil {
 		return nil, err
 	}
+
+	s.lg.Debug("Got order from DB", slog.Any("order_uid", orderUID))
+
 	s.cache.Put(orderUID, order)
 	return order, nil
 }
@@ -51,11 +57,12 @@ func (s *OrderService) FillCache(ctx context.Context) error {
 	orders, err := s.repo.GetOrders(ctx)
 
 	if err != nil {
-		return fmt.Errorf("failed to  load orders from DB: %w", err)
+		return fmt.Errorf("failed to load orders from DB: %w", err)
 	}
 
 	for _, order := range orders {
 		s.cache.Put(order.OrderUID, order)
+
 	}
 
 	return nil

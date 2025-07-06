@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	defaultConfigPath = "./configs/config.yml"
-	messageCount      = 50
+	messageCount = 50
 )
 
 func main() {
@@ -24,7 +23,7 @@ func main() {
 		slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 	)
 
-	cfg, err := config.New(defaultConfigPath)
+	cfg, err := config.New("")
 	if err != nil {
 		log.Error("Failed to load config", slog.Any("error", err))
 		os.Exit(1)

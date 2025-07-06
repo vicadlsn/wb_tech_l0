@@ -2,11 +2,11 @@ services:
     postgres:
         image: postgres:latest
         environment:
-            POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: postgres
-            POSTGRES_DB: orders
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: ${DB_NAME}
         ports:
-            - "5433:5432"
+            - "${DB_PORT}:5432"
         volumes:
             - pgdata:/var/lib/postgresql/data
 
@@ -14,7 +14,7 @@ services:
         build:
             context: ./migrate
         environment:
-            DATABASE_URL: "user=postgres password=postgres dbname=orders sslmode=disable"
+            DATABASE_URL: "user=${DB_USERNAME} password=${DB_PASSWORD} dbname=${DB_NAME} sslmode=disable"
         depends_on:
             - postgres
         restart: on-failure
@@ -53,7 +53,7 @@ services:
             [
                 "sh",
                 "-c",
-                "kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic orders --replication-factor 1 --partitions 1",
+                "kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic ${KAFKA_TOPIC} --replication-factor 1 --partitions 1",
             ]
         restart: no
 volumes:

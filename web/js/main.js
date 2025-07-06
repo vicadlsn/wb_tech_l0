@@ -12,7 +12,7 @@ async function getOrder() {
     }
 
     try {
-        const response = await fetch(`/order/${orderID}`);
+        const response = await fetch(`/order/${orderID}/`);
         if (!response.ok) {
             errorDiv.innerText =
                 response.status === 404 ? "Заказ не найден" : "Ошибка сервера";
