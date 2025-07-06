@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <link rel="stylesheet" href="css/main.css">
+    <script src="/js/main.js" defer></script>
+    <meta charset="UTF-8">
+    <title>Информация о заказе</title>
+</head>
+
+
+<body>
+    <div class="container">
+        <div class="main-content">
+            <h1>Информация о заказе</h1>
+            <label for="order_uid">Номер заказа</label>
+            <input type="text" id="order_uid">
+            <button id="get_order_info_button">Получить информацию о заказе</button>
+            <div id="order_error"></div>
+        </div>
+    </div>
+    <div class="container" id="order_info" style="display: none;">
+        <div class="order_info_section" id="order_info_details"></div>
+        <hr>
+        <div class="order_info_section" id="order_info_delivery"></div>
+        <hr>
+        <div class="order_info_section" id="order_info_payment"></div>
+        <hr>
+        <div class="order_info_section" id="order_info_items"></div>
+    </div>
+
+    <div class="sidebars">
+    </div>
+</body>
+
+</html>

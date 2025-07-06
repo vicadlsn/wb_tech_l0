@@ -1,0 +1,21 @@
+server:
+    host: "localhost"
+    port: "8081"
+
+database:
+    host: "localhost"
+    port: "5433"
+    username: "postgres"
+    password: "postgres"
+    name: "orders"
+    scheme: "public"
+
+    maxConnectionAttempts: 5
+    retryDelay: 5s
+    connectionTimeout: 30s
+
+kafka:
+    brokers:
+        - "localhost:9092"
+    topic: "orders"
+    group_id: "order_service_group"
