@@ -45,6 +45,15 @@ func (s *OrderService) GetOrder(ctx context.Context, orderUID string) (*models.O
 	return order, nil
 }
 
+func (s *OrderService) GetOrders(ctx context.Context) ([]*models.Order, error) {
+	orders, err := s.repo.GetOrders(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
 func (s *OrderService) CreateOrder(ctx context.Context, order *models.Order) error {
 	if err := s.repo.CreateOrder(ctx, order); err != nil {
 		return err

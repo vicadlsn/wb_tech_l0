@@ -12,6 +12,7 @@ func NewRouter(orderHandler *OrderHandler, log *slog.Logger) http.Handler {
 	mux.Handle("/", http.FileServer(http.Dir("./web")))
 
 	mux.HandleFunc("GET /order/{order_uid}/", orderHandler.GetOrder)
+	mux.HandleFunc("GET /orders/", orderHandler.GetAllOrders)
 
 	return loggingMiddleware(mux, log)
 }
